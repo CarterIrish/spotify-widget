@@ -10,6 +10,8 @@
 
 export default {
 	async fetch(request, env, ctx) {
+		// This is the entry point for my worker. This is where interaction with API starts
+		// Following two lines are testing if the environment variable is accessible
 		const callback = env.SPOTIFY_CALLBACK_URI;
 		console.log('Callback URL:', callback);
 		return new Response('Callback URL:', callback);
