@@ -12,6 +12,6 @@ export default {
 	async fetch(request, env, ctx) {
 		const callback = env.SPOTIFY_CALLBACK_URI;
 		console.log('Callback URL:', callback);
-		return new Response('Hello god!');
+		return new Response('Callback URL:', callback);
 	},
 };
