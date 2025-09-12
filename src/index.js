@@ -11,7 +11,8 @@
 export default {
 	async fetch(request, env, ctx) {
 
-		return new Response("Hello Frontend!", {headers: {'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*'}, status: 200  });
+		const data = {message: "Hello Frontend!"};
+		return new Response(JSON.stringify(data), {headers: {'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*'}, status: 200  });
 	},
 };
 
