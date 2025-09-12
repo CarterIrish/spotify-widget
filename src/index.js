@@ -11,7 +11,7 @@
 export default {
 	async fetch(request, env, ctx) {
 
-		return new Response("Hello Frontend!", { status: 200  });
+		return new Response("Hello Frontend!", {headers: {'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*'}, status: 200  });
 	},
 };
 
