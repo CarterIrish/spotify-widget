@@ -18,8 +18,8 @@ export default {
 		//return new Response(`Received param1: ${param1}, param2: ${param2}`);
 
 
-		const data = { message: "Hello Frontend!" };
-		return new Response(JSON.stringify(data), { headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' }, status: 200, body: JSON.stringify({ 'params': { param1, param2 } }) });
+		const data = { message: "Hello Frontend!", body: { param1, param2 } };
+		return new Response(JSON.stringify(data), { headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' }, status: 200 });
 	},
 };
 
