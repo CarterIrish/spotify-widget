@@ -11,14 +11,14 @@
 export default {
 	async fetch(request, env, ctx) {
 
-		const url = new URL(request.url);
-		const param1 = url.searchParams.get('param1');
-		const param2 = url.searchParams.get('param2');
+		// const url = new URL(request.url);
+		// const param1 = url.searchParams.get('param1');
+		// const param2 = url.searchParams.get('param2');
 		// Process the parameters
 		//return new Response(`Received param1: ${param1}, param2: ${param2}`);
 
 
-		const data = { message: "Hello Frontend!", body: { param1, param2 } };
+		const data = { message: "Hello Frontend!"};
 		return new Response(JSON.stringify(data), { headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' }, status: 200 });
 	},
 };
