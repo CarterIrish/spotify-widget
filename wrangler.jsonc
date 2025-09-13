@@ -13,7 +13,7 @@
 	"kv_namespaces": [
 	{
 	  "binding": "TOKENS", // Variable name used in your worker code
-	  "id": "spotify_tokens" // The namespace ID from Cloudflare
+	  "id": "f19f53c7629b46ac8bf221e8acaae6d3" // The namespace ID from Cloudflare
 	}
   ]
 	/**
