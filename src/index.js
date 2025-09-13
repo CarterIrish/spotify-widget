@@ -46,7 +46,7 @@ export default {
 		// Process the parameters
 		//return new Response(`Received param1: ${param1}, param2: ${param2}`);
 
-		const data = { message: "Hello Frontend!", body: { message } };
+		const data = { message: "Hello Frontend!"};
 		return new Response(JSON.stringify(data), { headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' }, status: 200 });
 	},
 };
