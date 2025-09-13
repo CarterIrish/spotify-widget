@@ -31,8 +31,7 @@ export default {
 					})
 				};
 				const response = await fetch(url,payload).then(res => res.json());
-				console.log(response);
-				if(response.status === 200)
+				console.log(response);				if(response.status === 200)
 				{
 					let user_id = await fetch('https://api.spotify.com/v1/me', {
 						headers: {
@@ -40,6 +39,7 @@ export default {
 						}
 					}).then(res => res.json());
 					console.log(user_id);
+					await env.TOKENS.put(user_id.id, response.refresh_token);
 				}
 			}
 		}
