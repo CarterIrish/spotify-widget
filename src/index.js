@@ -40,8 +40,15 @@ export default {
 					}).then(res => res.json());
 					console.log(user_id);
 					await env.TOKENS.put(user_id.id, response.refresh_token);
+					return { access_token: response.access_token, user_id: user_id.id };
 				}
 			}
+			const result = await getToken(code, code_verifier);
+			return new Response(JSON.stringify(result), {
+				headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+				status: 200
+			})
+		
 		}
 		else if(path.endsWith("/test-kv"))
 		{
