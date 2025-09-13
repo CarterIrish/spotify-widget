@@ -43,6 +43,11 @@ export default {
 				}
 			}
 		}
+		else if(path.endsWith("/test-kv"))
+		{
+			await env.TOKENS.put("test_key", "test_value");
+			return new Response("KV write attempted", { status: 200 });
+		}
 		// Process the parameters
 		//return new Response(`Received param1: ${param1}, param2: ${param2}`);
 
