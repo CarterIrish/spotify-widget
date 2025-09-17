@@ -28,8 +28,10 @@ export default {
 				}
 			});
 		}
+
 		// Authentication endpoint
 		if (path.endsWith("/auth") && request.method === "POST") {
+			console.log("Auth endpoint hit");
 			return await authEndpoint(request, env);
 		}
 
@@ -64,7 +66,7 @@ export default {
 async function authEndpoint(request, env) {
 	// pull code and code_verifier from request body using decontructuring
 	const { code, code_verifier } = await request.json();
-
+	console.log(`Auth request received with code: ${code} and verifier: ${code_verifier}`);
 	// Exchange the authorization code for an access token
 	const getToken = async (code, code_verifier) => {
 		const url = new URL('https://accounts.spotify.com/api/token');
@@ -75,7 +77,7 @@ async function authEndpoint(request, env) {
 				client_id: env.SPOTIFY_CLIENT_ID,
 				grant_type: 'authorization_code',
 				code: code,
-				redirect_uri: 'http://127.0.0.1:5500/callback',
+				redirect_uri: 'http://127.0.0.1:5500/callback.html',
 				code_verifier: code_verifier
 			})
 		};
@@ -168,6 +170,6 @@ async function authEndpoint(request, env) {
 			headers: {'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*'},
 			status: 200
 		});
-	}
+	};
 }
 
