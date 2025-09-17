@@ -33,7 +33,7 @@ export default {
 			return await authEndpoint(request, env);
 		}
 
-		else if(path.endsWith("/refresh") && request.method === "POST") {
+		else if (path.endsWith("/refresh") && request.method === "POST") {
 			// Refresh token endpoint
 			// pull user_id from request body using decontructuring
 			return await refreshEndpoint(request, env);
@@ -63,7 +63,16 @@ export default {
 // \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 async function authEndpoint(request, env) {
 	// pull code and code_verifier from request body using decontructuring
-	const { code, code_verifier } = await request.json();
+	request = await request.json();
+	if (request.code === null || request.code_verifier === null) {
+		return new Response(
+			JSON.stringify({ error: "Missing code or code_verifier" }), 
+			{ 
+				status: 400,
+				headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+			});
+	}
+	const { code, code_verifier } = request;
 
 	// Exchange the authorization code for an access token
 	const getToken = async (code, code_verifier) => {
@@ -117,17 +126,16 @@ async function authEndpoint(request, env) {
 		status: 200
 	});
 
-// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// Spotify Token Refresh Endpoint Handler
-// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+	// Spotify Token Refresh Endpoint Handler
+	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 	async function refreshEndpoint(request, env) {
 		// Get user id for refresh from request body
 		const userId = (await request.json()).user_id;
 		// Test if userId exists
-		if(!userId)
-		{
+		if (!userId) {
 			// No user id provided, return error
-			return new Response(JSON.stringify({error: "No user_id provided"}), {
+			return new Response(JSON.stringify({ error: "No user_id provided" }), {
 				headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
 				status: 400
 			});
@@ -135,11 +143,10 @@ async function authEndpoint(request, env) {
 		// Get refresh token from KV using the user id as the key
 		const refresh_token = await env.TOKENS.get(userId);
 		// Test refresh token
-		if(!refresh_token)
-		{
+		if (!refresh_token) {
 			// No token found for userID, return error
-			return new Response(JSON.stringify({error: "No refresh token found for user_id"}), {
-				headers: {'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+			return new Response(JSON.stringify({ error: "No refresh token found for user_id" }), {
+				headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
 				status: 404
 			});
 		}
@@ -147,7 +154,7 @@ async function authEndpoint(request, env) {
 		const url = new URL('https://accounts.spotify.com/api/token');
 		const payload = {
 			method: 'POST',
-			headers: {'content-type': 'application/x-www-form-urlencoded'},
+			headers: { 'content-type': 'application/x-www-form-urlencoded' },
 			body: new URLSearchParams({
 				client_id: env.SPOTIFY_CLIENT_ID,
 				grant_type: 'refresh_token',
@@ -155,17 +162,16 @@ async function authEndpoint(request, env) {
 			})
 		}
 		// Send token request and log response
-		const response = await fetch(url,payload).then(res => res.json());
+		const response = await fetch(url, payload).then(res => res.json());
 		console.log("Refresh response:", response);
-		if(response.refresh_token && response.refresh_token !== refresh_token)
-		{
+		if (response.refresh_token && response.refresh_token !== refresh_token) {
 			await env.TOKENS.put(userId, response.refresh_token);
 			console.log("Stored new refresh token for user:", userId);
 		}
 
 		// Build response object and return non-sensitive fields as JSON with CORS headers
-		return new Response(JSON.stringify({access_token: response.access_token, expires_in: response.expires_in, token_type: response.token_type, scope: response.scope}), {
-			headers: {'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*'},
+		return new Response(JSON.stringify({ access_token: response.access_token, expires_in: response.expires_in, token_type: response.token_type, scope: response.scope }), {
+			headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
 			status: 200
 		});
 	}
