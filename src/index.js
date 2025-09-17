@@ -75,7 +75,7 @@ async function authEndpoint(request, env) {
 				client_id: env.SPOTIFY_CLIENT_ID,
 				grant_type: 'authorization_code',
 				code: code,
-				redirect_uri: 'https://carterirish.net/callback',
+				redirect_uri: 'http://127.0.0.1:5500/callback',
 				code_verifier: code_verifier
 			})
 		};
