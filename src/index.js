@@ -99,7 +99,8 @@ async function authEndpoint(request, env) {
 			if (user.id) {
 				// id exists, store refresh token in KV using user id as key
 				await env.TOKENS.put(user.id, response.refresh_token);
-				return { access_token: response.access_token, user_id: user.id };
+				console.log("Stored refresh token for user:", user.id);
+				return { access_token: response.access_token, user_id: user.id, expires_in: response.expires_in};
 			}
 			else {
 				// id doesn't exist, return error
