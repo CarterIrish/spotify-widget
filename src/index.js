@@ -1,179 +1,96 @@
 /**
- * Welcome to Cloudflare Workers! This is your first worker.
+ * Spotify Widget API - Cloudflare Worker
  *
- * - Run `npm run dev` in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run `npm run deploy` to publish your worker
+ * IMPROVEMENT OPPORTUNITIES:
  *
- * Learn more at https://developers.cloudflare.com/workers/
+ * 1. CODE ORGANIZATION: This file is doing too much! Consider splitting into:
+ *    - src/handlers/auth.js (authentication logic)
+ *    - src/handlers/tokens.js (token refresh logic)
+ *    - src/utils/spotify.js (Spotify API calls)
+ *    - src/utils/responses.js (standardized response helpers)
+ *    - src/middleware/cors.js (CORS handling)
+ *
+ * 2. ROUTING: Replace the if/else chain with a proper router:
+ *    - Use URLPattern API or create a simple route matcher
+ *    - Separate route definitions from handler logic
+ *
+ * 3. TYPESCRIPT: Convert to .ts for better type safety and IDE support
+ *
+ * 4. ERROR HANDLING: Add global error handling and consistent error responses
  */
+
+import { authEndpoint } from './handlers/auth.js';
+import { refreshEndpoint } from './handlers/refresh.js';
+import { currentlyPlayingEndpoint } from './handlers/currently-playing.js';
+import { corsResponse, createResponse, successResponse, errorResponse } from './utils/responses.js';
+import { refreshAccessToken, exchangeCodeForToken, getUserProfile } from './utils/spotify.js';
 
 export default {
 	async fetch(request, env, ctx) {
+		// IMPROVEMENT: Add try/catch for global error handling
+		// IMPROVEMENT: Validate environment variables on startup
+		// if (!env.SPOTIFY_CLIENT_ID) throw new Error('Missing SPOTIFY_CLIENT_ID');
 
 		// Get URL and path from search bar
 		const url = new URL(request.url);
 		const path = url.pathname;
 		const method = request.method;
 		console.log(`Request received: ${method} ${path}`);
+
+		// IMPROVEMENT: Add request logging with more details (IP, user-agent, etc.)
+		// IMPROVEMENT: Add rate limiting here to prevent abuse
+
 		// Handle CORS preflight request
+		// IMPROVEMENT: Move CORS handling to a separate middleware function
+		// IMPROVEMENT: Make CORS origins configurable instead of allowing "*"
 		if (method === "OPTIONS") {
-			return new Response(null, {
-				status: 204,
-				headers: {
-					"Access-Control-Allow-Origin": "*",
-					"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-					"Access-Control-Allow-Headers": "Content-Type",
-					"Access-Control-Max-Age": "86400"
-				}
-			});
+			return corsResponse();
 		}
+
+		// IMPROVEMENT: Replace this routing with a proper router pattern:
+		// const routes = [
+		//   { method: 'POST', path: '/auth', handler: authEndpoint },
+		//   { method: 'POST', path: '/refresh', handler: refreshEndpoint },
+		//   { method: 'GET', path: '/health', handler: healthEndpoint }
+		// ];
+
 		// Authentication endpoint
 		if (path.endsWith("/auth") && request.method === "POST") {
+			console.log("Auth endpoint hit");
+			// IMPROVEMENT: Add input validation here before calling handler
+			// IMPROVEMENT: Add rate limiting for auth attempts
 			return await authEndpoint(request, env);
 		}
 
 		else if (path.endsWith("/refresh") && request.method === "POST") {
 			// Refresh token endpoint
-			// pull user_id from request body using decontructuring
+			// IMPROVEMENT: Add input validation for user_id
 			return await refreshEndpoint(request, env);
 		}
-		// Test endpoint
-		else if (path.endsWith("/test-kv")) {
-			await env.TOKENS.put("test_key", "test_value");
-			return new Response("KV write attempted", { status: 201 });
+		// TODO(human): Add currently playing endpoint
+		// Use path.endsWith("/currently-playing") && request.method === "POST"
+		// Call currentlyPlayingEndpoint(request, env)
+		else if(path.endsWith("/currently-playing") && request.method === 'POST')
+		{
+			return await currentlyPlayingEndpoint(request,env)
 		}
+
+		// IMPROVEMENT: Add a proper health check endpoint at /health
 		else if (path === "/") {
 			// Handle root path request
-			let data = { message: "Root Endpoint" };
-			return new Response(JSON.stringify(data), { headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' }, status: 200, statusText: "OK" });
+			// IMPROVEMENT: Return API documentation or redirect to docs
+			let data = { message: "Spotify Widget API", version: "1.0.0", endpoints: ["/auth", "/refresh", "/currently-playing"] };
+			return successResponse(data, 200);
 		}
 		else {
-			// Build response object
-			// Return the response as JSON with CORS headers & status 200 options
-			// Response object body, then an object with headers(optional: default empty), status(default 200), and statusText(optional: default "")
-			let data = { message: "Endpoint Not Found" };
-			return new Response(JSON.stringify(data), { headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' }, status: 404, statusText: "Not Found" });
+			// IMPROVEMENT: Create a standardized error response function
+			// IMPROVEMENT: Log 404s for monitoring potential attacks
+			return errorResponse('Endpoint Not Found', 404, 'NOT_FOUND');
 		}
 	},
 };
 
-// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-// Spotify Authentication Endpoint Handler
-// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-async function authEndpoint(request, env) {
-	// pull code and code_verifier from request body using decontructuring
-	request = await request.json();
-	if (request.code === null || request.code_verifier === null) {
-		return new Response(
-			JSON.stringify({ error: "Missing code or code_verifier" }), 
-			{ 
-				status: 400,
-				headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' }
-			});
-	}
-	const { code, code_verifier } = request;
 
-	// Exchange the authorization code for an access token
-	const getToken = async (code, code_verifier) => {
-		const url = new URL('https://accounts.spotify.com/api/token');
-		const payload = {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-			body: new URLSearchParams({
-				client_id: env.SPOTIFY_CLIENT_ID,
-				grant_type: 'authorization_code',
-				code: code,
-				redirect_uri: 'https://carterirish.net/callback',
-				code_verifier: code_verifier
-			})
-		};
-		// send token request and log response
-		const response = await fetch(url, payload).then(res => res.json());
-		console.log("Token response:", response);
-		/* check for access_token and refresh_token in response
-		 if both exist, fetch user profile to get user id
-		 store refresh_token in KV with user id as key
-		return access_token and user id
-		if not, return error message*/
-		if (response.access_token && response.refresh_token) {
-			// tokens exist, fetch user profile
-			let user = await fetch('https://api.spotify.com/v1/me', {
-				headers: { 'Authorization': `Bearer ${response.access_token}` }
-			}).then(res => res.json());
-			console.log("User response:", user);
-			// check for user id
-			if (user.id) {
-				// id exists, store refresh token in KV using user id as key
-				await env.TOKENS.put(user.id, response.refresh_token);
-				return { access_token: response.access_token, user_id: user.id };
-			}
-			else {
-				// id doesn't exist, return error
-				return { error: "Failed to get user id", details: user };
-			}
-		}
-		else {
-			// tokens don't exist, return error
-			return { error: "Failed to get tokens", details: response };
-		}
-	};
 
-	// call getToken and return result as JSON response with CORS headers to calling page
-	const result = await getToken(code, code_verifier);
-	return new Response(JSON.stringify(result), {
-		headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-		status: 200
-	});
 
-	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	// Spotify Token Refresh Endpoint Handler
-	// \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
-	async function refreshEndpoint(request, env) {
-		// Get user id for refresh from request body
-		const userId = (await request.json()).user_id;
-		// Test if userId exists
-		if (!userId) {
-			// No user id provided, return error
-			return new Response(JSON.stringify({ error: "No user_id provided" }), {
-				headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-				status: 400
-			});
-		}
-		// Get refresh token from KV using the user id as the key
-		const refresh_token = await env.TOKENS.get(userId);
-		// Test refresh token
-		if (!refresh_token) {
-			// No token found for userID, return error
-			return new Response(JSON.stringify({ error: "No refresh token found for user_id" }), {
-				headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-				status: 404
-			});
-		}
-		// Build API request
-		const url = new URL('https://accounts.spotify.com/api/token');
-		const payload = {
-			method: 'POST',
-			headers: { 'content-type': 'application/x-www-form-urlencoded' },
-			body: new URLSearchParams({
-				client_id: env.SPOTIFY_CLIENT_ID,
-				grant_type: 'refresh_token',
-				refresh_token: refresh_token
-			})
-		}
-		// Send token request and log response
-		const response = await fetch(url, payload).then(res => res.json());
-		console.log("Refresh response:", response);
-		if (response.refresh_token && response.refresh_token !== refresh_token) {
-			await env.TOKENS.put(userId, response.refresh_token);
-			console.log("Stored new refresh token for user:", userId);
-		}
-
-		// Build response object and return non-sensitive fields as JSON with CORS headers
-		return new Response(JSON.stringify({ access_token: response.access_token, expires_in: response.expires_in, token_type: response.token_type, scope: response.scope }), {
-			headers: { 'Content-type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-			status: 200
-		});
-	}
-}
 
