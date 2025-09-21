@@ -16,7 +16,7 @@ export async function exchangeCodeForToken(code, code_verifier, env) {
             client_id: env.SPOTIFY_CLIENT_ID,
             grant_type: 'authorization_code',
             code: code,
-            redirect_uri: env.SPOTIFY_REDIRECT_URI || 'https://lab.carterirish.net/callback.html',
+            redirect_uri: 'https://lab.carterirish.net/portfolio/callback.html',
             code_verifier: code_verifier
         })
     };
