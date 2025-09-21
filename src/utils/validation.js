@@ -50,6 +50,29 @@ export function validateContentType(request) {
 }
 
 /**
+ * Validates currently playing request body
+ * TODO(human): Implement validation for access_token and user_id
+ * @param {Object} body Request body object
+ * @returns {Object} Validated data or throws error
+ */
+export function validateCurrentlyPlayingRequest(body) {
+    // TODO(human): Extract access_token and user_id from body
+    const {access_token, user_id} = body;
+    // TODO(human): Validate access_token is a non-empty string
+    if(!access_token || typeof access_token !== "string" || access_token.trim().length === 0)
+    {
+        throw new ValidationError('Invalid access_token provided', 'INVALID_ACCESS_TOKEN');
+    }
+    // TODO(human): Validate user_id is a non-empty string
+    if(!user_id || typeof user_id !== 'string' || user_id.trim().length === 0)
+    {
+        throw new ValidationError('Invalid user_id provided', 'INVALID_USER_ID');
+    }
+    // TODO(human): Return { access_token, user_id } or throw ValidationError
+    return {user_id:user_id.trim(), access_token:access_token.trim()}
+}
+
+/**
  * Custom validation error class
  */
 export class ValidationError extends Error {

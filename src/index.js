@@ -21,7 +21,8 @@
 
 import { authEndpoint } from './handlers/auth.js';
 import { refreshEndpoint } from './handlers/refresh.js';
-import { corsResponse, createResponse, successResponse, errorResponse } from './utils/responses.js';	
+import { currentlyPlayingEndpoint } from './handlers/currently-playing.js';
+import { corsResponse, createResponse, successResponse, errorResponse } from './utils/responses.js';
 import { refreshAccessToken, exchangeCodeForToken, getUserProfile } from './utils/spotify.js';
 
 export default {
@@ -66,11 +67,19 @@ export default {
 			// IMPROVEMENT: Add input validation for user_id
 			return await refreshEndpoint(request, env);
 		}
+		// TODO(human): Add currently playing endpoint
+		// Use path.endsWith("/currently-playing") && request.method === "POST"
+		// Call currentlyPlayingEndpoint(request, env)
+		else if(path.endsWith("/currently-playing") && request.method === 'POST')
+		{
+			return await currentlyPlayingEndpoint(request,env)
+		}
+
 		// IMPROVEMENT: Add a proper health check endpoint at /health
 		else if (path === "/") {
 			// Handle root path request
 			// IMPROVEMENT: Return API documentation or redirect to docs
-			let data = { message: "Spotify Widget API", version: "1.0.0", endpoints: ["/auth", "/refresh"] };
+			let data = { message: "Spotify Widget API", version: "1.0.0", endpoints: ["/auth", "/refresh", "/currently-playing"] };
 			return successResponse(data, 200);
 		}
 		else {
